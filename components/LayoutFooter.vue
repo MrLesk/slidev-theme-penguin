@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useNow } from '@vueuse/core'
+import { computed } from 'vue'
 
 defineProps({
   eventLogo: {
@@ -19,7 +19,7 @@ defineProps({
 
 const { now } = useNow()
 
-const date = computed(() => now?.value.toLocaleDateString('en-US'))
+const _date = computed(() => now?.value.toLocaleDateString('en-US'))
 </script>
 
 <template>
