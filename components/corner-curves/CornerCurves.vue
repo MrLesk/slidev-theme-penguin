@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import CurveBig from './assets/curve-big.svg'
+import CurveSmall from './assets/curve-small.svg'
 
+defineOptions({ name: 'CornerCurves' })
 </script>
 
 <template>

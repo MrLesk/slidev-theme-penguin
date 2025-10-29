@@ -51,8 +51,8 @@ const props = withDefaults(
   },
 )
 
-const _isLoading = ref(true)
-const _embedSrc = computed(() => buildEmbedUrl(props.url))
+const isLoading = ref(true)
+const embedSrc = computed(() => buildEmbedUrl(props.url))
 
 function buildEmbedUrl(rawUrl: string): string | null {
   if (!rawUrl) return null

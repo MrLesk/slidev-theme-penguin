@@ -39,10 +39,10 @@ const props = withDefaults(
   },
 )
 
-const _hasHeader = computed(() => Boolean(props.title) || Boolean(props.icon))
+const hasHeader = computed(() => Boolean(props.title) || Boolean(props.icon))
 
-const _gradientClass = computed(() => (props.gradient ? 'card-gradient' : 'card-solid'))
-const _blurClass = computed(() => (props.blur ? 'card-blur' : ''))
+const gradientClass = computed(() => (props.gradient ? 'card-gradient' : 'card-solid'))
+const blurClass = computed(() => (props.blur ? 'card-blur' : ''))
 
 const variantStyles = computed(() => {
   const baseBadge = 'badge-default'
@@ -83,8 +83,8 @@ const variantStyles = computed(() => {
   }
 })
 
-const _containerVariantClass = computed(() => variantStyles.value.container)
-const _badgeVariantClass = computed(() => variantStyles.value.badge)
+const containerVariantClass = computed(() => variantStyles.value.container)
+const badgeVariantClass = computed(() => variantStyles.value.badge)
 </script>
 
 <style scoped>
