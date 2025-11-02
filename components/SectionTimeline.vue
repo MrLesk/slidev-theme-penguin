@@ -55,7 +55,7 @@ const withStatus = computed(() => props.steps.map((step, index) => ({
 .chevron-timeline__track {
   list-style: none;
   display: flex;
-  gap: 0.5rem;
+  gap: 0;
   padding: 0;
   margin: 0;
   align-items: center;
@@ -79,6 +79,7 @@ const withStatus = computed(() => props.steps.map((step, index) => ({
     0% 100%,
     1.5rem 50%
   );
+  margin-left: -0.75rem;
   transition: all 0.2s ease;
   filter:
     drop-shadow(0px 1px 0px rgba(0, 0, 0, 0.08))
@@ -89,6 +90,7 @@ const withStatus = computed(() => props.steps.map((step, index) => ({
 
 /* First item has no left arrow indent */
 .chevron-timeline__step:first-child {
+  margin-left: 0;
   padding-left: 2rem;
   clip-path: polygon(
     0% 0%,
