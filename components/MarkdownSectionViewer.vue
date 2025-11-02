@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { useSlideContext } from '@slidev/client'
 import type { Highlighter } from 'shiki'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useSlideContext } from '@slidev/client'
 import PenguinTheme from '../setup/theme/penguin-theme.json'
 
 defineOptions({ name: 'MarkdownSectionViewer' })
@@ -41,8 +41,7 @@ let activeController: AbortController | null = null
 const activeSlideNo = computed(() => $nav.value?.currentSlideNo?.value ?? 0)
 const currentPageNo = computed(() => {
   const page = $page.value as unknown
-  if (typeof page === 'number')
-    return page
+  if (typeof page === 'number') return page
   if (page && typeof (page as { value?: unknown }).value === 'number')
     return (page as { value: number }).value
   return 0
@@ -50,28 +49,24 @@ const currentPageNo = computed(() => {
 const isActive = computed(() => activeSlideNo.value === currentPageNo.value)
 
 const activeIndex = computed(() => {
-  if (!sectionRanges.value.length)
-    return -1
+  if (!sectionRanges.value.length) return -1
 
   const clicksVal = $clicks?.value ?? 0
   const raw = clicksVal - props.clickOffset
 
-  if (raw < 0)
-    return -1
+  if (raw < 0) return -1
 
   return Math.min(raw, sectionRanges.value.length - 1)
 })
 
 const highlightRange = computed(() => {
   const section = sectionRanges.value[activeIndex.value]
-  if (!section)
-    return null
+  if (!section) return null
 
   const start = section.startLine + 1
   const end = section.endLine + 1
 
-  if (Number.isNaN(start) || Number.isNaN(end))
-    return null
+  if (Number.isNaN(start) || Number.isNaN(end)) return null
 
   return {
     start: Math.max(1, start),
@@ -79,55 +74,61 @@ const highlightRange = computed(() => {
   }
 })
 
-watch(isActive, (active) => {
-  if (active) {
-    loadFile()
-    startRefreshTimer()
-  }
-  else {
-    stopRefreshTimer()
-  }
-}, { immediate: true })
+watch(
+  isActive,
+  (active) => {
+    if (active) {
+      loadFile()
+      startRefreshTimer()
+    } else {
+      stopRefreshTimer()
+    }
+  },
+  { immediate: true },
+)
 
-watch(() => props.file, () => {
-  if (isActive.value)
-    loadFile(true)
-})
+watch(
+  () => props.file,
+  () => {
+    if (isActive.value) loadFile(true)
+  },
+)
 
 watch(
   () => props.sections,
   () => {
-    if (rawContent.value)
-      recomputeSections(rawContent.value)
+    if (rawContent.value) recomputeSections(rawContent.value)
   },
   { deep: true },
 )
 
-watch([highlightRange, renderedHtml], () => {
-  applyHighlight()
-}, { flush: 'post' })
+watch(
+  [highlightRange, renderedHtml],
+  () => {
+    applyHighlight()
+  },
+  { flush: 'post' },
+)
 
+// biome-ignore lint/correctness/noUnusedVariables: consumed in the template rendering
 const statusMessage = computed(() => {
-  if (loadError.value)
-    return loadError.value
-  if (!rawContent.value)
-    return null
-  if (!sectionRanges.value.length)
-    return 'No sections detected.'
-  if (missingSections.value.length)
-    return `Missing sections: ${missingSections.value.join(', ')}`
+  if (loadError.value) return loadError.value
+  if (!rawContent.value) return null
+  if (!sectionRanges.value.length) return 'No sections detected.'
+  if (missingSections.value.length) return `Missing sections: ${missingSections.value.join(', ')}`
   return null
 })
 
 function startRefreshTimer() {
   stopRefreshTimer()
-  if (!props.refreshInterval)
-    return
+  if (!props.refreshInterval) return
 
-  refreshTimer = setInterval(() => {
-    if (isActive.value)
-      loadFile()
-  }, Math.max(1000, props.refreshInterval))
+  refreshTimer = setInterval(
+    () => {
+      if (isActive.value) loadFile()
+    },
+    Math.max(1000, props.refreshInterval),
+  )
 }
 
 function stopRefreshTimer() {
@@ -150,43 +151,30 @@ onMounted(() => {
 })
 
 async function loadFile(force = false) {
-  if (!props.file)
-    return
+  if (!props.file) return
 
   if (isLoading.value) {
-    if (force && activeController)
-      activeController.abort()
-    else
-      return
-  }
-
-  const url = resolveFileUrl(props.file)
-  if (!url) {
-    loadError.value = `Cannot resolve file path: ${props.file}`
-    return
+    if (force && activeController) activeController.abort()
+    else return
   }
 
   try {
     isLoading.value = true
     loadError.value = null
     activeController = new AbortController()
-    const bust = import.meta.env.DEV ? `?_=${Date.now()}` : ''
-    const response = await fetch(encodeURI(url + bust), { signal: activeController.signal })
-    if (!response.ok)
-      throw new Error(`Failed to load file (status ${response.status})`)
-    const text = await response.text()
+
+    const target = await resolveFileTarget(props.file, { force })
+    const { text } = await loadResolvedContent(target, activeController.signal, props.file)
+
     activeController = null
     const cleaned = stripCommentMarkers(text)
     rawContent.value = cleaned
     recomputeSections(cleaned)
     await renderContent(cleaned)
-  }
-  catch (error) {
-    if ((error as DOMException)?.name === 'AbortError')
-      return
+  } catch (error) {
+    if ((error as DOMException)?.name === 'AbortError') return
     loadError.value = error instanceof Error ? error.message : String(error)
-  }
-  finally {
+  } finally {
     isLoading.value = false
   }
 }
@@ -209,9 +197,7 @@ async function renderContent(source: string) {
     const highlighter = await getSharedHighlighter()
     const themeName = (PenguinTheme as { name?: string }).name ?? 'theme-penguin'
     const frontmatter = detectFrontMatterRange(source)
-    const transformers = frontmatter
-      ? [createFrontmatterTransformer(frontmatter, themeName)]
-      : []
+    const transformers = frontmatter ? [createFrontmatterTransformer(frontmatter, themeName)] : []
 
     const html = await highlighter.codeToHtml(source, {
       lang: 'markdown',
@@ -220,8 +206,7 @@ async function renderContent(source: string) {
     })
 
     renderedHtml.value = html.replace('<pre class="shiki"', '<pre class="slidev-code shiki"')
-  }
-  catch (error) {
+  } catch (error) {
     console.error('[renderContent] error:', error)
     loadError.value = error instanceof Error ? error.message : String(error)
   }
@@ -230,12 +215,12 @@ async function renderContent(source: string) {
 async function applyHighlight() {
   await nextTick()
   const container = codeWrapperRef.value
-  if (!container)
-    return
+  if (!container) return
 
-  const lines = Array.from(container.querySelectorAll('pre.shiki code > span.line')) as HTMLElement[]
-  if (!lines.length)
-    return
+  const lines = Array.from(
+    container.querySelectorAll('pre.shiki code > span.line'),
+  ) as HTMLElement[]
+  if (!lines.length) return
 
   const range = highlightRange.value
   if (!range) {
@@ -247,14 +232,14 @@ async function applyHighlight() {
 
   if (props.maxHeight) {
     // Find the actual highlighted lines for scroll positioning
-    const highlightedLines = lines.filter(line => line.classList.contains('highlighted'))
+    const highlightedLines = lines.filter((line) => line.classList.contains('highlighted'))
 
-    if (highlightedLines.length === 0)
-      return
+    if (highlightedLines.length === 0) return
 
     const firstLine = highlightedLines[0]
     const lastLine = highlightedLines[highlightedLines.length - 1]
-    const scrollTarget = (container.querySelector('.slidev-code') as HTMLElement | null) ?? container
+    const scrollTarget =
+      (container.querySelector('.slidev-code') as HTMLElement | null) ?? container
 
     if (firstLine && scrollTarget) {
       // Use offsetTop for accurate position regardless of scroll state
@@ -269,10 +254,9 @@ async function applyHighlight() {
 
       if (sectionHeight <= viewportHeight) {
         // Small section: center it vertically
-        const sectionMiddle = sectionTop + (sectionHeight / 2)
-        targetScrollTop = sectionMiddle - (viewportHeight / 2)
-      }
-      else {
+        const sectionMiddle = sectionTop + sectionHeight / 2
+        targetScrollTop = sectionMiddle - viewportHeight / 2
+      } else {
         // Large section: scroll to top (show heading first)
         const offset = 20 // Small breathing room from top
         targetScrollTop = sectionTop - offset
@@ -288,7 +272,12 @@ async function applyHighlight() {
 
 function clearHighlights(lines: HTMLElement[]) {
   for (const line of lines)
-    line.classList.remove('slidev-code-highlighted', 'slidev-code-dishonored', 'highlighted', 'dishonored')
+    line.classList.remove(
+      'slidev-code-highlighted',
+      'slidev-code-dishonored',
+      'highlighted',
+      'dishonored',
+    )
 }
 
 function applyLineRange(lines: HTMLElement[], start: number, end: number) {
@@ -307,20 +296,16 @@ function applyLineRange(lines: HTMLElement[], start: number, end: number) {
 }
 
 function resolveFileUrl(path: string) {
-  if (!path)
-    return ''
+  if (!path) return ''
 
-  if (/^https?:\/\//.test(path))
-    return path
+  if (/^https?:\/\//.test(path)) return path
 
-  if (path.startsWith('/@fs/'))
-    return path
+  if (path.startsWith('/@fs/')) return path
 
   if (path.startsWith('/Users/') || path.startsWith('/Volumes/') || /^[A-Z]:\//i.test(path))
     return `/@fs${path}`
 
-  if (path.startsWith('/'))
-    return path
+  if (path.startsWith('/')) return path
 
   return `/${path}`
 }
@@ -331,7 +316,10 @@ type SectionMatch = {
   endLine: number
 }
 
-function computeSections(source: string, requested?: string[]): { sections: SectionMatch[]; missing: string[] } {
+function computeSections(
+  source: string,
+  requested?: string[],
+): { sections: SectionMatch[]; missing: string[] } {
   const lines = source.split(/\r?\n/)
   const headings: Array<{ text: string; line: number; norm: string }> = []
   const headingPattern = /^(#{1,6})\s+(.*)$/
@@ -354,8 +342,7 @@ function computeSections(source: string, requested?: string[]): { sections: Sect
       if (normalized === 'frontmatter') {
         if (frontMatterEnd >= 0)
           sections.push({ label: entry, startLine: 0, endLine: frontMatterEnd })
-        else
-          missing.push(entry)
+        else missing.push(entry)
         return
       }
 
@@ -367,8 +354,7 @@ function computeSections(source: string, requested?: string[]): { sections: Sect
 
       sections.push({ label: entry, startLine: match.line, endLine: match.line })
     })
-  }
-  else {
+  } else {
     if (frontMatterEnd >= 0)
       sections.push({ label: 'Frontmatter', startLine: 0, endLine: frontMatterEnd })
 
@@ -379,8 +365,7 @@ function computeSections(source: string, requested?: string[]): { sections: Sect
 
   const ordered = [...sections].sort((a, b) => a.startLine - b.startLine)
   ordered.forEach((section, index) => {
-    if (section.startLine < 0)
-      section.startLine = 0
+    if (section.startLine < 0) section.startLine = 0
 
     if (normalizeHeading(section.label) === 'frontmatter' && frontMatterEnd >= 0) {
       section.endLine = frontMatterEnd
@@ -399,15 +384,12 @@ function computeSections(source: string, requested?: string[]): { sections: Sect
 }
 
 function detectFrontMatterEnd(lines: string[]) {
-  if (!lines.length)
-    return -1
+  if (!lines.length) return -1
 
-  if (lines[0].trim() !== '---')
-    return -1
+  if (lines[0].trim() !== '---') return -1
 
   for (let index = 1; index < lines.length; index++) {
-    if (lines[index].trim() === '---')
-      return index
+    if (lines[index].trim() === '---') return index
   }
 
   return -1
@@ -426,8 +408,7 @@ function stripCommentMarkers(source: string) {
     .split(/\r?\n/)
     .filter((line) => {
       const trimmed = line.trim()
-      if (!trimmed.startsWith('<!--') || !trimmed.endsWith('-->'))
-        return true
+      if (!trimmed.startsWith('<!--') || !trimmed.endsWith('-->')) return true
 
       return !/^<!--\s*[A-Z0-9:_-]+\s*-->$/i.test(trimmed)
     })
@@ -439,8 +420,7 @@ type FrontmatterRange = { start: number; end: number }
 function detectFrontMatterRange(source: string): FrontmatterRange | null {
   const lines = source.split(/\r?\n/)
   const end = detectFrontMatterEnd(lines)
-  if (end < 0)
-    return null
+  if (end < 0) return null
   return { start: 0, end }
 }
 
@@ -450,6 +430,7 @@ async function getSharedHighlighter() {
   if (!highlighterPromise) {
     highlighterPromise = import('shiki').then(async (mod) => {
       const highlighter = await mod.getHighlighter({ langs: ['markdown', 'md', 'yaml'] })
+      // biome-ignore lint/suspicious/noExplicitAny: Shiki theme loader expects the runtime theme object
       await highlighter.loadTheme(PenguinTheme as any)
       return highlighter
     })
@@ -460,18 +441,17 @@ async function getSharedHighlighter() {
 function createFrontmatterTransformer(range: FrontmatterRange, themeName: string) {
   return {
     name: 'markdown-section-frontmatter-transformer',
+    // biome-ignore lint/suspicious/noExplicitAny: Shiki transformer API uses loose typings
     tokens(this: any, tokens: any[][]) {
       const total = range.end - range.start + 1
-      if (total <= 0)
-        return tokens
+      if (total <= 0) return tokens
 
       const frontMatterSource = this.source
         .split(/\r?\n/)
         .slice(range.start, range.start + total)
         .join('\n')
 
-      if (!frontMatterSource)
-        return tokens
+      if (!frontMatterSource) return tokens
 
       const yamlTokensResult = this.codeToTokens(frontMatterSource, {
         lang: 'yaml',
@@ -481,13 +461,249 @@ function createFrontmatterTransformer(range: FrontmatterRange, themeName: string
       const yamlTokens = yamlTokensResult?.tokens || []
       for (let index = 0; index < yamlTokens.length; index++) {
         const target = range.start + index
-        if (tokens[target])
-          tokens[target] = yamlTokens[index]
+        if (tokens[target]) tokens[target] = yamlTokens[index]
       }
 
       return tokens
     },
   }
+}
+
+async function loadResolvedContent(
+  target: ResolvedFileTarget | null,
+  signal: AbortSignal,
+  originalInput: string,
+) {
+  if (!target) throw new Error(`Unable to resolve path from pattern: ${originalInput}`)
+
+  const bust = import.meta.env.DEV ? `?_=${Date.now()}` : ''
+
+  if (target.type === 'raw') {
+    const text = await target.loader()
+    return { text }
+  }
+
+  const response = await fetch(encodeURI(target.url + bust), { signal })
+  if (!response.ok) throw new Error(`Failed to load file (status ${response.status})`)
+
+  const text = await response.text()
+  return { text }
+}
+
+type ResolvedFileTarget =
+  | { type: 'direct'; url: string; path: string }
+  | { type: 'raw'; loader: () => Promise<string>; path: string }
+
+const markdownGlobLoaders: Record<string, () => Promise<string>> = (() => {
+  try {
+    return import.meta.glob<string>('/**/*.md', {
+      query: '?raw',
+      import: 'default',
+      eager: false,
+    })
+  } catch {
+    return {}
+  }
+})()
+
+const directoryCache = new Map<string, { entries: string[]; timestamp: number }>()
+
+async function resolveFileTarget(
+  input: string,
+  options: { force?: boolean } = {},
+): Promise<ResolvedFileTarget | null> {
+  if (!input) return null
+
+  const normalized = normalizeFsPath(input)
+  if (!containsGlobMagic(normalized)) {
+    const url = resolveFileUrl(normalized)
+    if (!url) return null
+    return {
+      type: 'direct',
+      url,
+      path: normalized,
+    }
+  }
+
+  const match = await resolveGlobMatch(normalized, options)
+  if (!match) return null
+
+  if (match.loader) return { type: 'raw', loader: match.loader, path: match.path }
+
+  const url = resolveFileUrl(match.path)
+  if (!url) return null
+
+  return { type: 'direct', url, path: match.path }
+}
+
+type GlobMatch = { path: string; loader?: () => Promise<string> }
+
+async function resolveGlobMatch(
+  pattern: string,
+  options: { force?: boolean },
+): Promise<GlobMatch | null> {
+  const { dir, glob } = splitGlobPattern(pattern)
+  const regex = globToRegExp(glob)
+
+  const loaderMatch = matchGlobFromIndex(dir, regex, pattern)
+  if (loaderMatch) return loaderMatch
+
+  const entries = await listDirectoryEntries(dir, options.force)
+  if (!entries.length) return null
+
+  const matches = entries.filter((entry) => regex.test(entry))
+  if (!matches.length) return null
+
+  if (matches.length > 1)
+    throw new Error(`Pattern "${pattern}" matched multiple files: ${matches.join(', ')}`)
+
+  const fileName = matches[0]
+  return {
+    path: joinFsPath(dir, fileName),
+  }
+}
+
+function matchGlobFromIndex(dir: string, regex: RegExp, originalPattern: string): GlobMatch | null {
+  const entries = Object.entries(markdownGlobLoaders)
+  if (!entries.length) return null
+
+  const normalizedDir = normalizeFsPath(dir)
+  const dirNeedle = normalizedDir === '/' ? '/' : normalizedDir.replace(/\/+$/, '')
+  const dirNeedleWithSlash =
+    dirNeedle && dirNeedle !== '.' && dirNeedle !== '/' ? `${dirNeedle}/` : ''
+
+  const candidates = entries.filter(([key]) => {
+    const normalizedKey = normalizeFsPath(stripQueryAndHash(key))
+    const basename = normalizedKey.split('/').pop() ?? normalizedKey
+    if (!regex.test(basename)) return false
+    if (!dirNeedleWithSlash) return true
+    return normalizedKey.includes(dirNeedleWithSlash)
+  })
+
+  if (!candidates.length) return null
+
+  if (candidates.length > 1) {
+    const names = candidates.map(([key]) => key.split('/').pop() ?? key)
+    throw new Error(`Pattern "${originalPattern}" matched multiple files: ${names.join(', ')}`)
+  }
+
+  const [path, loader] = candidates[0]
+  return {
+    path: normalizeFsPath(path),
+    loader,
+  }
+}
+
+async function listDirectoryEntries(dir: string, force = false): Promise<string[]> {
+  const normalizedDir = normalizeFsPath(dir)
+  const cacheKey = normalizedDir
+
+  if (!normalizedDir || normalizedDir === '.') return []
+
+  if (!force) {
+    const cached = directoryCache.get(cacheKey)
+    if (cached && Date.now() - cached.timestamp < 4000) return cached.entries
+  }
+
+  const urlBase = normalizedDir === '.' ? '/' : resolveFileUrl(normalizedDir)
+  if (!urlBase) return []
+
+  const url = `${urlBase}${urlBase.endsWith('/') ? '' : '/'}`
+  const bust = import.meta.env.DEV ? `?_=${Date.now()}` : ''
+
+  const response = await fetch(encodeURI(url + bust))
+  if (!response.ok) return []
+
+  const html = await response.text()
+  const entries = parseDirectoryListing(html)
+  directoryCache.set(cacheKey, { entries, timestamp: Date.now() })
+  return entries
+}
+
+function parseDirectoryListing(html: string): string[] {
+  try {
+    const parser = new DOMParser()
+    const doc = parser.parseFromString(html, 'text/html')
+    const anchors = Array.from(doc.querySelectorAll('a'))
+    const results = new Set<string>()
+
+    for (const anchor of anchors) {
+      const href = anchor.getAttribute('href') ?? ''
+      const decoded = decodeURIComponent(href)
+      const name = decoded.split('/').filter(Boolean).pop()
+      if (!name || name === '..' || name.endsWith('/')) continue
+      results.add(name)
+    }
+
+    return Array.from(results)
+  } catch {
+    const matches = Array.from(html.matchAll(/href="([^"]+)"/g))
+    const results = new Set<string>()
+    for (const match of matches) {
+      const decoded = decodeURIComponent(match[1])
+      const name = decoded.split('/').filter(Boolean).pop()
+      if (!name || name === '..' || name.endsWith('/')) continue
+      results.add(name)
+    }
+    return Array.from(results)
+  }
+}
+
+function containsGlobMagic(value: string) {
+  return /[*?[{\]]/.test(value)
+}
+
+function splitGlobPattern(pattern: string) {
+  const normalized = normalizeFsPath(pattern)
+  const index = normalized.lastIndexOf('/')
+  if (index < 0) return { dir: '.', glob: normalized }
+  const dir = normalized.slice(0, index) || '/'
+  const glob = normalized.slice(index + 1) || '*'
+  return { dir, glob }
+}
+
+function globToRegExp(glob: string) {
+  let pattern = ''
+  let index = 0
+  while (index < glob.length) {
+    const char = glob[index]
+    if (char === '*') {
+      const next = glob[index + 1]
+      if (next === '*') {
+        pattern += '.*'
+        index += 2
+        continue
+      }
+      pattern += '[^/]*'
+      index += 1
+      continue
+    }
+    if (char === '?') {
+      pattern += '.'
+      index += 1
+      continue
+    }
+    pattern += escapeRegexChar(char)
+    index += 1
+  }
+  return new RegExp(`^${pattern}$`)
+}
+
+function escapeRegexChar(char: string) {
+  return /[.+^${}()|[\]\\]/.test(char) ? `\\${char}` : char
+}
+
+function joinFsPath(dir: string, name: string) {
+  if (!dir || dir === '.') return name
+  return `${dir.replace(/\/+$/, '')}/${name.replace(/^\/+/, '')}`
+}
+
+function normalizeFsPath(path: string) {
+  return path.replace(/\\/g, '/')
+}
+
+function stripQueryAndHash(value: string) {
+  return value.replace(/[?#].*$/, '')
 }
 </script>
 
