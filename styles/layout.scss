@@ -1,6 +1,15 @@
 :root {
   --slidev-theme-primary: #3e5166;
   --slidev-theme-secondary: #34d399;
+  --slidev-inline-code-color: #2b3846;
+  --slidev-inline-code-bg: rgba(62, 81, 102, 0.12);
+  --slidev-inline-code-border: rgba(62, 81, 102, 0.22);
+}
+
+html.dark {
+  --slidev-inline-code-color: #dcf7ed;
+  --slidev-inline-code-bg: rgba(255, 255, 255, 0.08);
+  --slidev-inline-code-border: rgba(255, 255, 255, 0.18);
 }
 
 html:not(.dark) #slide-content {
@@ -79,26 +88,20 @@ html:not(.dark) #slide-content {
   }
 
   code {
-    @apply text-secondary-300;
-
     font-size: 0.70rem !important;
   }
 
   :not(pre) > code {
-    font-size: 0.9em;
-    background: transparent;
-    @apply font-light py-0.5 rounded;
+    color: var(--slidev-inline-code-color);
+    background-color: var(--slidev-inline-code-bg);
+    border: 1px solid var(--slidev-inline-code-border);
+    font-size: 0.95em;
+    @apply font-medium px-2 py-0.5 rounded transition-colors duration-200;
   }
 
   :not(pre) > code:before,
   :not(pre) > code:after {
-    content: '';
-    padding: 0 0.2em;
-    opacity: 0.5;
-  }
-
-  :not(pre) > code:before {
-    margin-right: -0.08em;
+    display: none;
   }
 
   span[style*='color: var(--shiki-token-keyword)'],
