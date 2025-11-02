@@ -245,6 +245,38 @@ export const app = createApp(App)
 
 app.use(VueDynamicForms)
 ```
+
+---
+layout: two-cols
+timeline:
+  preset: backlog-flow
+  current: implementation-plan
+---
+
+# Timeline Presets
+
+Use the `timeline` frontmatter to surface multi-step journeys at the top of your slide.
+
+::right::
+### Frontmatter
+
+```yaml
+timeline:
+  preset: backlog-flow
+  current: task-execution
+```
+
+### Custom Steps
+
+```yaml
+timeline:
+  steps:
+    - { id: discover, label: Discover }
+    - { id: plan, label: Plan }
+    - { id: build, label: Build }
+  current: plan
+```
+
 ---
 layout: text-window
 reverse: true

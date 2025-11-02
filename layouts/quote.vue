@@ -1,5 +1,12 @@
 <template>
-  <div class="slidev-layout quote">
+  <div class="slidev-layout quote" :class="timeline ? 'has-timeline' : ''">
+    <div v-if="timeline" class="layout-timeline-container">
+      <SectionTimeline
+        :steps="timeline.steps"
+        :current-index="timeline.currentIndex"
+        :title="timeline.title"
+      />
+    </div>
     <CornerCurves class="absolute left-0 top-0 transform rotate-90" />
     <div class="flex flex-col justify-center items-center min-h-full py-20">
       <div class="max-w-5xl mx-auto px-16 relative">
@@ -34,16 +41,28 @@
 </template>
 
 <script setup lang="ts">
-withDefaults(
+import { computed } from 'vue'
+import { useSlideContext } from '@slidev/client'
+
+import SectionTimeline from '../components/SectionTimeline.vue'
+import CornerCurves from '../components/corner-curves/CornerCurves.vue'
+import { useTimelineResolver, type TimelineFrontmatter } from '../setup/theme/timelines'
+
+const props = withDefaults(
   defineProps<{
     showMarks?: boolean
     showGraphic?: boolean
+    timeline?: TimelineFrontmatter | string | boolean
   }>(),
   {
     showMarks: true,
     showGraphic: true,
   },
 )
+
+const { $slidev } = useSlideContext()
+const { resolve } = useTimelineResolver($slidev?.configs?.timelinePresets)
+const timeline = computed(() => resolve(props.timeline))
 </script>
 
 <style>

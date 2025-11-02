@@ -1,5 +1,27 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useSlideContext } from '@slidev/client'
+
+import SectionTimeline from '../components/SectionTimeline.vue'
+import CornerCurves from '../components/corner-curves/CornerCurves.vue'
+import { useTimelineResolver, type TimelineFrontmatter } from '../setup/theme/timelines'
+
+const props = defineProps<{ timeline?: TimelineFrontmatter | string | boolean }>()
+const { $slidev } = useSlideContext()
+
+const { resolve } = useTimelineResolver($slidev?.configs?.timelinePresets)
+const timeline = computed(() => resolve(props.timeline))
+</script>
+
 <template>
-  <div class="bg-section slidev-layout new-section">
+  <div class="bg-section slidev-layout new-section" :class="timeline ? 'has-timeline' : ''">
+    <div v-if="timeline" class="layout-timeline-container">
+      <SectionTimeline
+        :steps="timeline.steps"
+        :current-index="timeline.currentIndex"
+        :title="timeline.title"
+      />
+    </div>
     <CornerCurves class="absolute left-0 top-0 transform rotate-90" />
     <div class="flex flex-col justify-center text-center">
       <slot></slot>

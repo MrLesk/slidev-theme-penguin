@@ -119,6 +119,25 @@ html:not(.dark) #slide-content {
   }
 }
 
+.slidev-layout.has-timeline {
+  padding-top: 6.5rem;
+}
+
+.layout-timeline-container {
+  position: absolute;
+  top: 1.8rem;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 25;
+
+  > * {
+    pointer-events: auto;
+  }
+}
+
 :root {
   --shiki-color-text: #88e5c3;
   --shiki-color-background: #282A36;
