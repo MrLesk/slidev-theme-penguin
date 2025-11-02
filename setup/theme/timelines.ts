@@ -10,7 +10,6 @@ export interface TimelineStep {
 export interface TimelineDefinition {
   steps: TimelineStep[]
   current?: string | number
-  title?: string
 }
 
 export interface TimelineFrontmatter extends Partial<TimelineDefinition> {
@@ -21,20 +20,12 @@ export interface ResolvedTimeline {
   steps: TimelineStep[]
   currentIndex: number
   currentStep: TimelineStep
-  title?: string
 }
 
 export type TimelinePresetMap = Record<string, TimelineDefinition>
 
 const defaultPresets: TimelinePresetMap = {
-  'backlog-flow': {
-    title: 'Product Backlog Journey',
-    steps: [
-      { id: 'task-creation', label: 'Task Creation' },
-      { id: 'implementation-plan', label: 'Implementation Plan' },
-      { id: 'task-execution', label: 'Task Execution' },
-    ],
-  },
+  // No default presets - users should define their own in slides.md frontmatter
 }
 
 export function useTimelineResolver(presetsFromTheme?: TimelinePresetMap) {
@@ -61,7 +52,6 @@ export function useTimelineResolver(presetsFromTheme?: TimelinePresetMap) {
     if (!steps || !steps.length)
       return null
 
-    const title = normalized?.title ?? preset?.title
     const currentIndex = resolveCurrentIndex(normalized?.current, steps)
     const currentStep = steps[currentIndex]
 
@@ -69,7 +59,6 @@ export function useTimelineResolver(presetsFromTheme?: TimelinePresetMap) {
       steps,
       currentIndex,
       currentStep,
-      title,
     }
   }
 

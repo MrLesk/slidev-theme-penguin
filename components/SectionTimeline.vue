@@ -4,12 +4,15 @@ import { computed } from 'vue'
 import type { TimelineStep } from '../setup/theme/timelines'
 
 const props = withDefaults(defineProps<{
+  /** Array of timeline steps to display */
   steps: TimelineStep[]
+  /** Index of the current step (0-based) */
   currentIndex?: number
-  title?: string
+  /** Accessible label for the timeline navigation */
+  ariaLabel?: string
 }>(), {
   currentIndex: 0,
-  title: undefined,
+  ariaLabel: 'Timeline',
 })
 
 const safeCurrent = computed(() => {
@@ -28,7 +31,7 @@ const withStatus = computed(() => props.steps.map((step, index) => ({
 </script>
 
 <template>
-  <nav class="chevron-timeline" aria-label="Process Steps">
+  <nav class="chevron-timeline" :aria-label="ariaLabel">
     <ul class="chevron-timeline__track" role="list">
       <li
         v-for="step in withStatus"
@@ -38,6 +41,7 @@ const withStatus = computed(() => props.steps.map((step, index) => ({
           'chevron-timeline__step--current': step.isCurrent,
           'chevron-timeline__step--past': step.isPast
         }"
+        :aria-current="step.isCurrent ? 'step' : undefined"
       >
         <span class="chevron-timeline__label">{{ step.label }}</span>
       </li>
@@ -47,6 +51,28 @@ const withStatus = computed(() => props.steps.map((step, index) => ({
 
 <style scoped>
 .chevron-timeline {
+  /* CSS Custom Properties for theming */
+  --chevron-timeline-arrow-size: 1.5rem;
+  --chevron-timeline-overlap: -0.75rem;
+  --chevron-timeline-padding-x: 1rem;
+  --chevron-timeline-padding-y: 1rem;
+
+  /* Colors - upcoming step */
+  --chevron-timeline-upcoming-bg: rgba(148, 163, 184, 0.25);
+  --chevron-timeline-upcoming-text: rgba(62, 81, 102, 0.65);
+  --chevron-timeline-upcoming-shadow: rgba(0, 0, 0, 0.08);
+
+  /* Colors - past step */
+  --chevron-timeline-past-bg: rgba(52, 211, 153, 0.35);
+  --chevron-timeline-past-text: #ffffff;
+  --chevron-timeline-past-shadow: rgba(52, 211, 153, 0.3);
+
+  /* Colors - current step */
+  --chevron-timeline-current-bg: #10b981;
+  --chevron-timeline-current-text: #ffffff;
+  --chevron-timeline-current-shadow: rgba(16, 185, 129, 0.5);
+  --chevron-timeline-current-glow: rgba(16, 185, 129, 0.35);
+
   width: 100%;
   padding: 0 2rem;
   margin: 0 auto 2rem;
@@ -68,77 +94,76 @@ const withStatus = computed(() => props.steps.map((step, index) => ({
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem 2.5rem 1rem 1.5rem;
-  background: rgba(148, 163, 184, 0.25);
-  color: var(--slidev-theme-primary, #3e5166);
+  padding: var(--chevron-timeline-padding-y) calc(var(--chevron-timeline-arrow-size) + var(--chevron-timeline-padding-x)) var(--chevron-timeline-padding-y) calc(var(--chevron-timeline-arrow-size) * 0.5 + var(--chevron-timeline-padding-x));
+  background: var(--chevron-timeline-upcoming-bg);
   clip-path: polygon(
     0% 0%,
-    calc(100% - 1.5rem) 0%,
+    calc(100% - var(--chevron-timeline-arrow-size)) 0%,
     100% 50%,
-    calc(100% - 1.5rem) 100%,
+    calc(100% - var(--chevron-timeline-arrow-size)) 100%,
     0% 100%,
-    1.5rem 50%
+    var(--chevron-timeline-arrow-size) 50%
   );
-  margin-left: -0.75rem;
+  margin-left: var(--chevron-timeline-overlap);
   transition: all 0.2s ease;
   filter:
-    drop-shadow(0px 1px 0px rgba(0, 0, 0, 0.08))
-    drop-shadow(1px 0px 0px rgba(0, 0, 0, 0.08))
-    drop-shadow(0px -1px 0px rgba(0, 0, 0, 0.08))
-    drop-shadow(-1px 0px 0px rgba(0, 0, 0, 0.08));
+    drop-shadow(0px 1px 0px var(--chevron-timeline-upcoming-shadow))
+    drop-shadow(1px 0px 0px var(--chevron-timeline-upcoming-shadow))
+    drop-shadow(0px -1px 0px var(--chevron-timeline-upcoming-shadow))
+    drop-shadow(-1px 0px 0px var(--chevron-timeline-upcoming-shadow));
 }
 
 /* First item has no left arrow indent */
 .chevron-timeline__step:first-child {
   margin-left: 0;
-  padding-left: 2rem;
+  padding-left: calc(var(--chevron-timeline-padding-x) * 2);
   clip-path: polygon(
     0% 0%,
-    calc(100% - 1.5rem) 0%,
+    calc(100% - var(--chevron-timeline-arrow-size)) 0%,
     100% 50%,
-    calc(100% - 1.5rem) 100%,
+    calc(100% - var(--chevron-timeline-arrow-size)) 100%,
     0% 100%
   );
 }
 
 /* Last item has no right arrow point */
 .chevron-timeline__step:last-child {
-  padding-right: 2rem;
+  padding-right: calc(var(--chevron-timeline-padding-x) * 2);
   clip-path: polygon(
     0% 0%,
     100% 0%,
     100% 100%,
     0% 100%,
-    1.5rem 50%
+    var(--chevron-timeline-arrow-size) 50%
   );
 }
 
 /* First and last combined (single item) */
 .chevron-timeline__step:first-child:last-child {
   clip-path: none;
-  padding: 1rem 2rem;
+  padding: var(--chevron-timeline-padding-y) calc(var(--chevron-timeline-padding-x) * 2);
   border-radius: 8px;
 }
 
-/* Past step styling - light green */
+/* Past step styling */
 .chevron-timeline__step--past {
-  background: rgba(52, 211, 153, 0.35);
+  background: var(--chevron-timeline-past-bg);
   filter:
-    drop-shadow(0px 1px 0px rgba(52, 211, 153, 0.3))
-    drop-shadow(1px 0px 0px rgba(52, 211, 153, 0.3))
-    drop-shadow(0px -1px 0px rgba(52, 211, 153, 0.3))
-    drop-shadow(-1px 0px 0px rgba(52, 211, 153, 0.3));
+    drop-shadow(0px 1px 0px var(--chevron-timeline-past-shadow))
+    drop-shadow(1px 0px 0px var(--chevron-timeline-past-shadow))
+    drop-shadow(0px -1px 0px var(--chevron-timeline-past-shadow))
+    drop-shadow(-1px 0px 0px var(--chevron-timeline-past-shadow));
 }
 
-/* Current step styling - darker green */
+/* Current step styling */
 .chevron-timeline__step--current {
-  background: #10b981;
+  background: var(--chevron-timeline-current-bg);
   filter:
-    drop-shadow(0 12px 28px rgba(16, 185, 129, 0.35))
-    drop-shadow(0px 1px 0px rgba(16, 185, 129, 0.5))
-    drop-shadow(1px 0px 0px rgba(16, 185, 129, 0.5))
-    drop-shadow(0px -1px 0px rgba(16, 185, 129, 0.5))
-    drop-shadow(-1px 0px 0px rgba(16, 185, 129, 0.5));
+    drop-shadow(0 12px 28px var(--chevron-timeline-current-glow))
+    drop-shadow(0px 1px 0px var(--chevron-timeline-current-shadow))
+    drop-shadow(1px 0px 0px var(--chevron-timeline-current-shadow))
+    drop-shadow(0px -1px 0px var(--chevron-timeline-current-shadow))
+    drop-shadow(-1px 0px 0px var(--chevron-timeline-current-shadow));
   z-index: 10;
 }
 
@@ -151,57 +176,30 @@ const withStatus = computed(() => props.steps.map((step, index) => ({
   letter-spacing: 0.05em;
   line-height: 1.2;
   text-align: center;
-  color: rgba(62, 81, 102, 0.65);
+  color: var(--chevron-timeline-upcoming-text);
 }
 
 .chevron-timeline__step--past .chevron-timeline__label {
-  color: #ffffff;
+  color: var(--chevron-timeline-past-text);
   font-weight: 600;
 }
 
 .chevron-timeline__step--current .chevron-timeline__label {
-  color: #ffffff;
+  color: var(--chevron-timeline-current-text);
   font-weight: 700;
 }
 
 /* Dark mode adjustments */
-html.dark .chevron-timeline__step {
-  background: rgba(148, 163, 184, 0.2);
-  filter:
-    drop-shadow(0px 1px 0px rgba(255, 255, 255, 0.08))
-    drop-shadow(1px 0px 0px rgba(255, 255, 255, 0.08))
-    drop-shadow(0px -1px 0px rgba(255, 255, 255, 0.08))
-    drop-shadow(-1px 0px 0px rgba(255, 255, 255, 0.08));
-}
+html.dark .chevron-timeline {
+  --chevron-timeline-upcoming-bg: rgba(148, 163, 184, 0.2);
+  --chevron-timeline-upcoming-text: rgba(148, 163, 184, 0.7);
+  --chevron-timeline-upcoming-shadow: rgba(255, 255, 255, 0.08);
 
-html.dark .chevron-timeline__step--past {
-  background: rgba(52, 211, 153, 0.3);
-  filter:
-    drop-shadow(0px 1px 0px rgba(52, 211, 153, 0.25))
-    drop-shadow(1px 0px 0px rgba(52, 211, 153, 0.25))
-    drop-shadow(0px -1px 0px rgba(52, 211, 153, 0.25))
-    drop-shadow(-1px 0px 0px rgba(52, 211, 153, 0.25));
-}
+  --chevron-timeline-past-bg: rgba(52, 211, 153, 0.3);
+  --chevron-timeline-past-shadow: rgba(52, 211, 153, 0.25);
 
-html.dark .chevron-timeline__step--current {
-  background: rgba(16, 185, 129, 0.9);
-  filter:
-    drop-shadow(0 12px 28px rgba(16, 185, 129, 0.3))
-    drop-shadow(0px 1px 0px rgba(16, 185, 129, 0.4))
-    drop-shadow(1px 0px 0px rgba(16, 185, 129, 0.4))
-    drop-shadow(0px -1px 0px rgba(16, 185, 129, 0.4))
-    drop-shadow(-1px 0px 0px rgba(16, 185, 129, 0.4));
-}
-
-html.dark .chevron-timeline__label {
-  color: rgba(148, 163, 184, 0.7);
-}
-
-html.dark .chevron-timeline__step--past .chevron-timeline__label {
-  color: #ffffff;
-}
-
-html.dark .chevron-timeline__step--current .chevron-timeline__label {
-  color: #ffffff;
+  --chevron-timeline-current-bg: rgba(16, 185, 129, 0.9);
+  --chevron-timeline-current-shadow: rgba(16, 185, 129, 0.4);
+  --chevron-timeline-current-glow: rgba(16, 185, 129, 0.3);
 }
 </style>

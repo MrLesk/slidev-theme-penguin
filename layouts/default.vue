@@ -22,7 +22,7 @@ const timeline = computed(() => resolve(props.timeline))
       <SectionTimeline
         :steps="timeline.steps"
         :current-index="timeline.currentIndex"
-        :title="timeline.title"
+        
       />
     </div>
     <CornerCurves class="absolute bottom-0 right-0 transform scale-x--100" />

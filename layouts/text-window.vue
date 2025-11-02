@@ -18,7 +18,7 @@ const timeline = computed(() => resolve(props.timeline))
       <SectionTimeline
         :steps="timeline.steps"
         :current-index="timeline.currentIndex"
-        :title="timeline.title"
+        
       />
     </div>
     <div
