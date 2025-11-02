@@ -112,10 +112,26 @@ watch(
 
 // biome-ignore lint/correctness/noUnusedVariables: consumed in the template rendering
 const statusMessage = computed(() => {
-  if (loadError.value) return loadError.value
+  if (loadError.value) {
+    // If we're polling and the error is about file not found, show a friendly loading message
+    if (props.refreshInterval && loadError.value.includes('Unable to resolve path from pattern')) {
+      return null // Don't show error, show loading message instead
+    }
+    return loadError.value
+  }
   if (!rawContent.value) return null
   if (!sectionRanges.value.length) return 'No sections detected.'
   if (missingSections.value.length) return `Missing sections: ${missingSections.value.join(', ')}`
+  return null
+})
+
+const displayMessage = computed(() => {
+  if (isLoading.value) return 'Loading task…'
+  if (loadError.value && props.refreshInterval && loadError.value.includes('Unable to resolve path from pattern')) {
+    return 'Waiting for task to be created…'
+  }
+  if (statusMessage.value) return statusMessage.value
+  if (!rawContent.value) return 'Waiting for content…'
   return null
 })
 
@@ -718,8 +734,8 @@ function stripQueryAndHash(value: string) {
       ref="codeWrapperRef"
       class="markdown-section-viewer__code slidev-code-wrapper slidev-code-line-numbers relative"
       :class="{
-        'markdown-section-viewer__code--loading': isLoading,
-        'markdown-section-viewer__code--error': statusMessage,
+        'markdown-section-viewer__code--loading': isLoading || displayMessage,
+        'markdown-section-viewer__code--error': statusMessage && !displayMessage?.includes('Waiting'),
       }"
       :style="{
         maxHeight: props.maxHeight,
@@ -728,14 +744,9 @@ function stripQueryAndHash(value: string) {
     >
       <div v-if="renderedHtml" class="markdown-section-viewer__shiki" v-html="renderedHtml" />
       <div v-else class="markdown-section-viewer__placeholder">
-        <span v-if="isLoading">Loading markdown…</span>
-        <span v-else-if="statusMessage">{{ statusMessage }}</span>
-        <span v-else>Waiting for content…</span>
+        <span>{{ displayMessage }}</span>
       </div>
     </div>
-    <p v-if="statusMessage" class="markdown-section-viewer__status">
-      {{ statusMessage }}
-    </p>
   </div>
 </template>
 
@@ -781,6 +792,13 @@ function stripQueryAndHash(value: string) {
 
 .markdown-section-viewer__shiki :deep(pre.shiki) {
   margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.markdown-section-viewer__shiki :deep(pre.shiki code) {
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .markdown-section-viewer__shiki :deep(.line.highlighted) {
