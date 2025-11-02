@@ -246,29 +246,42 @@ async function applyHighlight() {
   applyLineRange(lines, range.start, range.end)
 
   if (props.maxHeight) {
-    const startIndex = Math.max(0, Math.min(lines.length - 1, range.start - 1))
-    const endIndex = Math.max(startIndex, Math.min(lines.length - 1, range.end - 1))
-    const firstLine = lines[startIndex]
-    const lastLine = lines[endIndex]
+    // Find the actual highlighted lines for scroll positioning
+    const highlightedLines = lines.filter(line => line.classList.contains('highlighted'))
+
+    if (highlightedLines.length === 0)
+      return
+
+    const firstLine = highlightedLines[0]
+    const lastLine = highlightedLines[highlightedLines.length - 1]
     const scrollTarget = (container.querySelector('.slidev-code') as HTMLElement | null) ?? container
 
     if (firstLine && scrollTarget) {
-      const firstRect = firstLine.getBoundingClientRect()
-      const lastRect = (lastLine || firstLine).getBoundingClientRect()
-      const baseRect = scrollTarget.getBoundingClientRect()
-
-      const firstTop = firstRect.top - baseRect.top + scrollTarget.scrollTop
-      const lastBottom = lastRect.bottom - baseRect.top + scrollTarget.scrollTop
-      const sectionHeight = Math.max(lastBottom - firstTop, 0)
+      // Use offsetTop for accurate position regardless of scroll state
+      const sectionTop = firstLine.offsetTop
+      const sectionBottom = lastLine.offsetTop + lastLine.offsetHeight
+      const sectionHeight = sectionBottom - sectionTop
 
       const viewportHeight = scrollTarget.clientHeight
-      const offset = Math.max(viewportHeight * 0.05, 24)
-      let target = Math.max(firstTop - offset, 0)
+      const maxScrollTop = scrollTarget.scrollHeight - viewportHeight
 
-      if (sectionHeight > viewportHeight * 0.9)
-        target = Math.max(firstTop, 0)
+      let targetScrollTop: number
 
-      scrollTarget.scrollTo({ top: target, behavior: 'smooth' })
+      if (sectionHeight <= viewportHeight) {
+        // Small section: center it vertically
+        const sectionMiddle = sectionTop + (sectionHeight / 2)
+        targetScrollTop = sectionMiddle - (viewportHeight / 2)
+      }
+      else {
+        // Large section: scroll to top (show heading first)
+        const offset = 20 // Small breathing room from top
+        targetScrollTop = sectionTop - offset
+      }
+
+      // Clamp to valid scroll range
+      targetScrollTop = Math.max(0, Math.min(targetScrollTop, maxScrollTop))
+
+      scrollTarget.scrollTo({ top: targetScrollTop, behavior: 'smooth' })
     }
   }
 }
