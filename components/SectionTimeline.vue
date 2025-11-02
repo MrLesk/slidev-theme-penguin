@@ -22,160 +22,184 @@ const safeCurrent = computed(() => {
 const withStatus = computed(() => props.steps.map((step, index) => ({
   ...step,
   index,
-  status: index < safeCurrent.value ? 'complete' : index === safeCurrent.value ? 'current' : 'upcoming',
+  isCurrent: index === safeCurrent.value,
+  isPast: index < safeCurrent.value,
 })))
 </script>
 
 <template>
-  <nav class="timeline" aria-label="Presentation Sections">
-    <div v-if="title" class="timeline__title">{{ title }}</div>
-    <ol class="timeline__list" role="list">
+  <nav class="chevron-timeline" aria-label="Process Steps">
+    <ul class="chevron-timeline__track" role="list">
       <li
         v-for="step in withStatus"
         :key="step.id"
-        class="timeline__item"
-        :class="[
-          `timeline__item--${step.status}`,
-          { 'timeline__item--current': step.status === 'current' },
-        ]"
+        class="chevron-timeline__step"
+        :class="{
+          'chevron-timeline__step--current': step.isCurrent,
+          'chevron-timeline__step--past': step.isPast
+        }"
       >
-        <div class="timeline__item-content">
-          <span class="timeline__label">{{ step.label }}</span>
-          <span v-if="step.description" class="timeline__description">{{ step.description }}</span>
-        </div>
+        <span class="chevron-timeline__label">{{ step.label }}</span>
       </li>
-    </ol>
+    </ul>
   </nav>
 </template>
 
 <style scoped>
-.timeline {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  max-width: min(92%, 980px);
-  margin: 0 auto;
-  color: inherit;
+.chevron-timeline {
+  width: 100%;
+  padding: 0 2rem;
+  margin: 0 auto 2rem;
 }
 
-.timeline__title {
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-weight: 600;
-  opacity: 0.75;
-  text-align: center;
-}
-
-.timeline__list {
+.chevron-timeline__track {
   list-style: none;
   display: flex;
-  gap: 0.75rem;
+  gap: 0.5rem;
   padding: 0;
   margin: 0;
+  align-items: center;
+  justify-content: center;
 }
 
-.timeline__item {
+.chevron-timeline__step {
   position: relative;
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.85rem 1rem;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.75);
-  border: 1px solid rgba(62, 81, 102, 0.16);
-  color: #3e5166;
-  font-weight: 600;
+  padding: 1rem 2.5rem 1rem 1.5rem;
+  background: rgba(148, 163, 184, 0.25);
+  color: var(--slidev-theme-primary, #3e5166);
+  clip-path: polygon(
+    0% 0%,
+    calc(100% - 1.5rem) 0%,
+    100% 50%,
+    calc(100% - 1.5rem) 100%,
+    0% 100%,
+    1.5rem 50%
+  );
+  transition: all 0.2s ease;
+  filter:
+    drop-shadow(0px 1px 0px rgba(0, 0, 0, 0.08))
+    drop-shadow(1px 0px 0px rgba(0, 0, 0, 0.08))
+    drop-shadow(0px -1px 0px rgba(0, 0, 0, 0.08))
+    drop-shadow(-1px 0px 0px rgba(0, 0, 0, 0.08));
+}
+
+/* First item has no left arrow indent */
+.chevron-timeline__step:first-child {
+  padding-left: 2rem;
+  clip-path: polygon(
+    0% 0%,
+    calc(100% - 1.5rem) 0%,
+    100% 50%,
+    calc(100% - 1.5rem) 100%,
+    0% 100%
+  );
+}
+
+/* Last item has no right arrow point */
+.chevron-timeline__step:last-child {
+  padding-right: 2rem;
+  clip-path: polygon(
+    0% 0%,
+    100% 0%,
+    100% 100%,
+    0% 100%,
+    1.5rem 50%
+  );
+}
+
+/* First and last combined (single item) */
+.chevron-timeline__step:first-child:last-child {
+  clip-path: none;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+}
+
+/* Past step styling - light green */
+.chevron-timeline__step--past {
+  background: rgba(52, 211, 153, 0.35);
+  filter:
+    drop-shadow(0px 1px 0px rgba(52, 211, 153, 0.3))
+    drop-shadow(1px 0px 0px rgba(52, 211, 153, 0.3))
+    drop-shadow(0px -1px 0px rgba(52, 211, 153, 0.3))
+    drop-shadow(-1px 0px 0px rgba(52, 211, 153, 0.3));
+}
+
+/* Current step styling - darker green */
+.chevron-timeline__step--current {
+  background: #10b981;
+  filter:
+    drop-shadow(0 12px 28px rgba(16, 185, 129, 0.35))
+    drop-shadow(0px 1px 0px rgba(16, 185, 129, 0.5))
+    drop-shadow(1px 0px 0px rgba(16, 185, 129, 0.5))
+    drop-shadow(0px -1px 0px rgba(16, 185, 129, 0.5))
+    drop-shadow(-1px 0px 0px rgba(16, 185, 129, 0.5));
+  z-index: 10;
+}
+
+.chevron-timeline__label {
+  position: relative;
+  z-index: 1;
   font-size: 0.8rem;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  overflow: hidden;
-  backdrop-filter: blur(10px);
-}
-
-html.dark .timeline__item {
-  background: rgba(30, 43, 55, 0.85);
-  border-color: rgba(148, 163, 184, 0.2);
-  color: rgba(226, 232, 240, 0.9);
-}
-
-.timeline__item::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  right: -0.75rem;
-  transform: translateY(-50%);
-  border-top: 0.95rem solid transparent;
-  border-bottom: 0.95rem solid transparent;
-  border-left: 0.95rem solid currentColor;
-  opacity: 0.25;
-}
-
-.timeline__item:last-child::after {
-  display: none;
-}
-
-.timeline__item--complete {
-  background: linear-gradient(135deg, rgba(52, 211, 153, 0.18), rgba(52, 211, 153, 0.28));
-  color: var(--slidev-theme-secondary);
-  border-color: rgba(52, 211, 153, 0.45);
-}
-
-html.dark .timeline__item--complete {
-  background: linear-gradient(135deg, rgba(52, 211, 153, 0.25), rgba(52, 211, 153, 0.15));
-  color: rgba(167, 243, 208, 0.95);
-}
-
-.timeline__item--current {
-  background: linear-gradient(135deg, rgba(62, 81, 102, 0.92), rgba(62, 81, 102, 0.75));
-  color: #fff;
-  border-color: rgba(62, 81, 102, 0.35);
-  box-shadow: 0 12px 28px rgba(62, 81, 102, 0.22);
-  transform: translateY(-2px);
-}
-
-html.dark .timeline__item--current {
-  background: linear-gradient(135deg, rgba(55, 65, 81, 0.95), rgba(30, 41, 59, 0.88));
-  border-color: rgba(148, 163, 184, 0.45);
-}
-
-.timeline__item--upcoming {
-  opacity: 0.75;
-}
-
-.timeline__item-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.3rem;
-  text-align: center;
-}
-
-.timeline__label {
   line-height: 1.2;
+  text-align: center;
+  color: rgba(62, 81, 102, 0.65);
 }
 
-.timeline__description {
-  font-size: 0.7rem;
-  font-weight: 400;
-  opacity: 0.7;
-  text-transform: none;
-  letter-spacing: normal;
+.chevron-timeline__step--past .chevron-timeline__label {
+  color: #ffffff;
+  font-weight: 600;
 }
 
-@media (max-width: 768px) {
-  .timeline__list {
-    flex-direction: column;
-  }
+.chevron-timeline__step--current .chevron-timeline__label {
+  color: #ffffff;
+  font-weight: 700;
+}
 
-  .timeline__item {
-    border-radius: 16px;
-    padding: 0.75rem 0.9rem;
-  }
+/* Dark mode adjustments */
+html.dark .chevron-timeline__step {
+  background: rgba(148, 163, 184, 0.2);
+  filter:
+    drop-shadow(0px 1px 0px rgba(255, 255, 255, 0.08))
+    drop-shadow(1px 0px 0px rgba(255, 255, 255, 0.08))
+    drop-shadow(0px -1px 0px rgba(255, 255, 255, 0.08))
+    drop-shadow(-1px 0px 0px rgba(255, 255, 255, 0.08));
+}
 
-  .timeline__item::after {
-    display: none;
-  }
+html.dark .chevron-timeline__step--past {
+  background: rgba(52, 211, 153, 0.3);
+  filter:
+    drop-shadow(0px 1px 0px rgba(52, 211, 153, 0.25))
+    drop-shadow(1px 0px 0px rgba(52, 211, 153, 0.25))
+    drop-shadow(0px -1px 0px rgba(52, 211, 153, 0.25))
+    drop-shadow(-1px 0px 0px rgba(52, 211, 153, 0.25));
+}
+
+html.dark .chevron-timeline__step--current {
+  background: rgba(16, 185, 129, 0.9);
+  filter:
+    drop-shadow(0 12px 28px rgba(16, 185, 129, 0.3))
+    drop-shadow(0px 1px 0px rgba(16, 185, 129, 0.4))
+    drop-shadow(1px 0px 0px rgba(16, 185, 129, 0.4))
+    drop-shadow(0px -1px 0px rgba(16, 185, 129, 0.4))
+    drop-shadow(-1px 0px 0px rgba(16, 185, 129, 0.4));
+}
+
+html.dark .chevron-timeline__label {
+  color: rgba(148, 163, 184, 0.7);
+}
+
+html.dark .chevron-timeline__step--past .chevron-timeline__label {
+  color: #ffffff;
+}
+
+html.dark .chevron-timeline__step--current .chevron-timeline__label {
+  color: #ffffff;
 }
 </style>
