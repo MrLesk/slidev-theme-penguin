@@ -611,7 +611,12 @@ async function listDirectoryEntries(dir: string, force = false): Promise<string[
   const url = `${urlBase}${urlBase.endsWith('/') ? '' : '/'}`
   const bust = import.meta.env.DEV ? `?_=${Date.now()}` : ''
 
-  const response = await fetch(encodeURI(url + bust))
+  const response = await fetch(encodeURI(url + bust), {
+    headers: {
+      accept: 'text/plain, */*;q=0.1',
+      'x-markdown-section-viewer': 'dir-list',
+    },
+  })
   if (!response.ok) return []
 
   const html = await response.text()
