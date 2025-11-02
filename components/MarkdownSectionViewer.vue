@@ -38,7 +38,19 @@ const codeWrapperRef = ref<HTMLElement | null>(null)
 let refreshTimer: ReturnType<typeof setInterval> | null = null
 let activeController: AbortController | null = null
 
-const activeSlideNo = computed(() => $nav.value?.currentSlideNo?.value ?? 0)
+const activeSlideNo = computed(() => {
+  // Try to get from $nav first
+  if ($nav.value?.currentSlideNo?.value != null) {
+    return $nav.value.currentSlideNo.value
+  }
+  // Fallback: parse from URL
+  const path = window.location.pathname
+  const match = path.match(/\/(\d+)$/)
+  if (match) {
+    return parseInt(match[1], 10)
+  }
+  return 0
+})
 const currentPageNo = computed(() => {
   const page = $page.value as unknown
   if (typeof page === 'number') return page
@@ -76,9 +88,10 @@ const highlightRange = computed(() => {
 
 watch(
   isActive,
-  (active) => {
+  (active, wasActive) => {
     if (active) {
-      loadFile()
+      // Load immediately when slide becomes active
+      loadFile(true) // Force refresh when slide becomes active
       startRefreshTimer()
     } else {
       stopRefreshTimer()
@@ -126,10 +139,11 @@ const statusMessage = computed(() => {
 })
 
 const displayMessage = computed(() => {
-  if (isLoading.value) return 'Loading task…'
-  if (loadError.value && props.refreshInterval && loadError.value.includes('Unable to resolve path from pattern')) {
-    return 'Waiting for task to be created…'
+  // Show "Loading task..." while polling for content
+  if (props.refreshInterval && !rawContent.value) {
+    return 'Loading task…'
   }
+  if (isLoading.value) return 'Loading task…'
   if (statusMessage.value) return statusMessage.value
   if (!rawContent.value) return 'Waiting for content…'
   return null
@@ -139,11 +153,14 @@ function startRefreshTimer() {
   stopRefreshTimer()
   if (!props.refreshInterval) return
 
+  // Use faster polling (1 second) when content hasn't loaded yet
+  const pollInterval = rawContent.value ? props.refreshInterval : 1000
+
   refreshTimer = setInterval(
     () => {
-      if (isActive.value) loadFile()
+      if (isActive.value) loadFile(true) // Force refresh to bypass cache
     },
-    Math.max(1000, props.refreshInterval),
+    pollInterval,
   )
 }
 
@@ -174,24 +191,35 @@ async function loadFile(force = false) {
     else return
   }
 
+  let controller: AbortController | null = null
+
   try {
     isLoading.value = true
     loadError.value = null
-    activeController = new AbortController()
+    controller = new AbortController()
+    activeController = controller
 
     const target = await resolveFileTarget(props.file, { force })
-    const { text } = await loadResolvedContent(target, activeController.signal, props.file)
+    const signal = controller?.signal
+    const { text } = await loadResolvedContent(target, signal, props.file)
 
-    activeController = null
     const cleaned = stripCommentMarkers(text)
     rawContent.value = cleaned
     recomputeSections(cleaned)
     await renderContent(cleaned)
+
+    // Stop refreshing once we successfully load content
+    if (props.refreshInterval && rawContent.value) {
+      stopRefreshTimer()
+    }
   } catch (error) {
     if ((error as DOMException)?.name === 'AbortError') return
     loadError.value = error instanceof Error ? error.message : String(error)
   } finally {
     isLoading.value = false
+    if (controller === activeController) {
+      activeController = null
+    }
   }
 }
 
@@ -487,7 +515,7 @@ function createFrontmatterTransformer(range: FrontmatterRange, themeName: string
 
 async function loadResolvedContent(
   target: ResolvedFileTarget | null,
-  signal: AbortSignal,
+  signal: AbortSignal | undefined,
   originalInput: string,
 ) {
   if (!target) throw new Error(`Unable to resolve path from pattern: ${originalInput}`)
@@ -499,7 +527,8 @@ async function loadResolvedContent(
     return { text }
   }
 
-  const response = await fetch(encodeURI(target.url + bust), { signal })
+  const fetchOptions = signal ? { signal } : {}
+  const response = await fetch(encodeURI(target.url + bust), fetchOptions)
   if (!response.ok) throw new Error(`Failed to load file (status ${response.status})`)
 
   const text = await response.text()
@@ -735,7 +764,7 @@ function stripQueryAndHash(value: string) {
       class="markdown-section-viewer__code slidev-code-wrapper slidev-code-line-numbers relative"
       :class="{
         'markdown-section-viewer__code--loading': isLoading || displayMessage,
-        'markdown-section-viewer__code--error': statusMessage && !displayMessage?.includes('Waiting'),
+        'markdown-section-viewer__code--error': statusMessage && !displayMessage?.includes('Loading'),
       }"
       :style="{
         maxHeight: props.maxHeight,
