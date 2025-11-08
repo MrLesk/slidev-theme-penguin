@@ -36,7 +36,7 @@ const timeline = computed(() => resolve(props.timeline))
 <style>
 .slidev-layout.new-section {
   h1 {
-    @apply text-primary text-4xl leading-20 mb-0 font-title font-extrabold;
+    @apply text-primary text-5xl leading-20 mb-0 font-title font-extrabold;
   }
 
   h1 + p {
