@@ -2,6 +2,7 @@
   <div
     class="card-component relative inline-flex max-w-full flex-col rounded-3xl border px-6 py-4 shadow-lg backdrop-blur-xl"
     :class="[containerVariantClass, gradientClass, blurClass]"
+    :style="accentStyle"
   >
     <header
       v-if="hasHeader"
@@ -30,12 +31,14 @@ const props = withDefaults(
     gradient?: boolean
     blur?: boolean
     borderWidth?: number
+    accent?: string
   }>(),
   {
     variant: 'default',
     gradient: true,
     blur: true,
     borderWidth: 6,
+    accent: undefined,
   },
 )
 
@@ -43,6 +46,7 @@ const hasHeader = computed(() => Boolean(props.title) || Boolean(props.icon))
 
 const gradientClass = computed(() => (props.gradient ? 'card-gradient' : 'card-solid'))
 const blurClass = computed(() => (props.blur ? 'card-blur' : ''))
+const accentStyle = computed(() => (props.accent ? { '--card-accent': props.accent } : undefined))
 
 const variantStyles = computed(() => {
   const baseBadge = 'badge-default'
@@ -89,10 +93,11 @@ const badgeVariantClass = computed(() => variantStyles.value.badge)
 
 <style scoped>
 .card-component {
-  --card-border-color: color-mix(in srgb, var(--slidev-theme-primary, #64748b) 20%, transparent);
+  --card-accent: var(--slidev-theme-secondary, #10b981);
+  --card-border-color: color-mix(in srgb, var(--card-accent) 20%, transparent);
   --card-bg-from: color-mix(in srgb, white 95%, transparent);
   --card-bg-via: color-mix(in srgb, white 90%, transparent);
-  --card-bg-to: color-mix(in srgb, var(--slidev-theme-secondary, #10b981) 8%, white);
+  --card-bg-to: color-mix(in srgb, var(--card-accent) 8%, white);
   --card-text: var(--slidev-theme-foreground, #1e293b);
 
   border-color: var(--card-border-color);
@@ -100,10 +105,10 @@ const badgeVariantClass = computed(() => variantStyles.value.badge)
 }
 
 html.dark .card-component {
-  --card-border-color: color-mix(in srgb, var(--slidev-theme-primary, #64748b) 30%, transparent);
+  --card-border-color: color-mix(in srgb, var(--card-accent) 30%, transparent);
   --card-bg-from: color-mix(in srgb, #0f172a 80%, transparent);
   --card-bg-via: color-mix(in srgb, #0f172a 70%, transparent);
-  --card-bg-to: color-mix(in srgb, var(--slidev-theme-secondary, #10b981) 15%, #0f172a);
+  --card-bg-to: color-mix(in srgb, var(--card-accent) 15%, #0f172a);
   --card-text: var(--slidev-theme-foreground, #f1f5f9);
 }
 
@@ -145,13 +150,13 @@ html.dark .card-component {
 
 /* Badge variants */
 .badge-default {
-  background-color: color-mix(in srgb, var(--slidev-theme-secondary, #10b981) 15%, white);
-  color: color-mix(in srgb, var(--slidev-theme-secondary, #10b981) 90%, black);
+  background-color: color-mix(in srgb, var(--card-accent) 15%, white);
+  color: color-mix(in srgb, var(--card-accent) 90%, black);
 }
 
 html.dark .badge-default {
-  background-color: color-mix(in srgb, var(--slidev-theme-secondary, #10b981) 20%, transparent);
-  color: color-mix(in srgb, var(--slidev-theme-secondary, #10b981) 95%, white);
+  background-color: color-mix(in srgb, var(--card-accent) 20%, transparent);
+  color: color-mix(in srgb, var(--card-accent) 95%, white);
 }
 
 .badge-critical {

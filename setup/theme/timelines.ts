@@ -5,6 +5,7 @@ export interface TimelineStep {
   label: string
   description?: string
   icon?: string
+  color?: string
 }
 
 export interface TimelineDefinition {
