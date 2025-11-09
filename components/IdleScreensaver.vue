@@ -25,9 +25,8 @@
 </template>
 
 <script setup lang="ts">
-import { useSlideContext } from '@slidev/client'
+import { useNav, useSlideContext } from '@slidev/client'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
 
 defineOptions({ name: 'IdleScreensaver' })
 
@@ -48,7 +47,7 @@ const props = withDefaults(
 )
 
 const { $slidev } = useSlideContext()
-const route = useRoute()
+const { currentSlideNo } = useNav()
 
 // Get global config from frontmatter if component used without props
 const config = computed(() => $slidev.configs.idleScreensaver || {})
@@ -57,8 +56,7 @@ const enableOnSlides = computed(() => config.value.enableOnSlides || 'cover')
 
 // Determine if component should be active based on config or props
 const shouldEnableOnCurrentSlide = computed(() => {
-  const currentSlide = Number(route.params?.no) || 1
-
+  const currentSlide = Number(currentSlideNo?.value ?? 1)
   // If used manually with imageSrc prop, always enable on that slide
   if (props.imageSrc) return true
 
@@ -91,18 +89,18 @@ let frameId: number | null = null
 let lastTimestamp = 0
 let listenersAttached = false
 
-const _logoStyle = computed(() => ({
+const logoStyle = computed(() => ({
   transform: `translate3d(${position.x + bounds.left}px, ${position.y + bounds.top}px, 0)`,
 }))
 
-const _debugStyle = computed(() => ({
+const debugStyle = computed(() => ({
   transform: `translate3d(${bounds.left}px, ${bounds.top}px, 0)`,
   width: `${bounds.width}px`,
   height: `${bounds.height}px`,
 }))
 
 const externalSrcPattern = /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i
-const _resolvedImageSrc = computed(() => resolveImageSrc(finalImageSrc.value))
+const resolvedImageSrc = computed(() => resolveImageSrc(finalImageSrc.value))
 
 function resolveImageSrc(src: string | undefined): string {
   if (!src) return ''
