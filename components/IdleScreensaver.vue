@@ -46,7 +46,7 @@ const props = withDefaults(
   },
 )
 
-const { $slidev } = useSlideContext()
+const { $slidev, $page } = useSlideContext()
 const { currentSlideNo } = useNav()
 
 // Get global config from frontmatter if component used without props
@@ -55,9 +55,19 @@ const globalEnabled = computed(() => config.value.enabled === true)
 const enableOnSlides = computed(() => config.value.enableOnSlides || 'cover')
 
 // Determine if component should be active based on config or props
+const thisSlideNo = computed(() => {
+  const page = $page.value
+  if (typeof page === 'number') return page
+  if (page && typeof page.value === 'number') return page.value
+  return Number(currentSlideNo?.value ?? 1)
+})
+
+const isCurrentSlide = computed(() => Number(currentSlideNo?.value ?? 1) === thisSlideNo.value)
+
 const shouldEnableOnCurrentSlide = computed(() => {
-  const currentSlide = Number(currentSlideNo?.value ?? 1)
-  // If used manually with imageSrc prop, always enable on that slide
+  if (!isCurrentSlide.value) return false
+
+  // Manual usage with imageSrc: enable only on this slide
   if (props.imageSrc) return true
 
   // If global config is disabled, don't enable
