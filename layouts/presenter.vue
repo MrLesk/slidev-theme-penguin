@@ -1,3 +1,26 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+
+const presenterImage = computed(() => {
+  const image = ($attrs.presenterImage as string) || 'https://anonymous-animals.azurewebsites.net/animal/penguin'
+
+  // External URLs don't need base URL handling
+  if (/^https?:\/\//i.test(image)) {
+    return image
+  }
+
+  // For local paths starting with /, prepend BASE_URL
+  const base = import.meta.env.BASE_URL || '/'
+  if (image.startsWith('/')) {
+    const baseTrimmed = base.endsWith('/') ? base.slice(0, -1) : base
+    return `${baseTrimmed}${image}`
+  }
+
+  // For relative paths, append to base
+  return `${base}${image}`
+})
+</script>
+
 <template>
   <div class="slidev-layout relative">
     <div class="flex items-center">
@@ -19,7 +42,7 @@
           right-0
         />
         <img
-          :src="$attrs.presenterImage || 'https://anonymous-animals.azurewebsites.net/animal/penguin'"
+          :src="presenterImage"
           class="bg-gray-400 relative important-rounded-full object-cover h-80 w-80 border border-8 border-secondary-400 z-10"
         />
       </figure>
