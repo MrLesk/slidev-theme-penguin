@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, useAttrs } from 'vue'
+
+const attrs = useAttrs()
 
 const presenterImage = computed(() => {
-  const image = ($attrs.presenterImage as string) || 'https://anonymous-animals.azurewebsites.net/animal/penguin'
+  const image = (attrs.presenterImage as string) || 'https://anonymous-animals.azurewebsites.net/animal/penguin'
 
   // External URLs don't need base URL handling
   if (/^https?:\/\//i.test(image)) {
