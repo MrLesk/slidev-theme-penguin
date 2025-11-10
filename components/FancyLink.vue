@@ -16,7 +16,7 @@ function getDomain(url) {
 const faviconUrl = computed(() =>
   props.favicon
     ? props.favicon
-    : `http://www.google.com/s2/favicons?domain=${getDomain(props.href)}`,
+    : `https://www.google.com/s2/favicons?domain=${getDomain(props.href)}`,
 )
 const styles = computed(() => ({
   background: `url(${faviconUrl.value}) left center no-repeat`,
