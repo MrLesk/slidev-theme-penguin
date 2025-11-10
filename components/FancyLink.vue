@@ -19,7 +19,7 @@ const faviconUrl = computed(() =>
     : `https://www.google.com/s2/favicons?domain=${getDomain(props.href)}&sz=32`,
 )
 const styles = computed(() => ({
-  background: `url(${faviconUrl.value}) left center no-repeat`,
+  background: `url(${faviconUrl.value}) left center / 16px 16px no-repeat`,
   paddingLeft: '20px',
 }))
 </script>
