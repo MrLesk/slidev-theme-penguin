@@ -40,20 +40,20 @@
     "format": "biome format --write ."
   },
   "dependencies": {
-    "@alvarosabu/ui": "3.0.0",
-    "@slidev/types": "0.50.0-beta.5",
-    "prism-theme-vars": "^0.2.5",
-    "vite-svg-loader": "^5.1.0"
+    "@alvarosabu/ui": "3.1.0",
+    "@slidev/types": "0.51.0-beta.4",
+    "prism-theme-vars": "0.2.5",
+    "vite-svg-loader": "5.1.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.3.2",
-    "@iconify-json/la": "^1.2.0",
-    "@iconify-json/logos": "^1.2.3",
-    "@iconify-json/simple-icons": "^1.2.11",
-    "@release-it/conventional-changelog": "^9.0.2",
-    "@slidev/cli": "0.50.0-beta.5",
-    "playwright-chromium": "^1.48.2",
-    "release-it": "^17.10.0",
-    "sass": "^1.80.6"
+    "@biomejs/biome": "2.3.11",
+    "@iconify-json/la": "1.2.1",
+    "@iconify-json/logos": "1.2.10",
+    "@iconify-json/simple-icons": "1.2.66",
+    "@release-it/conventional-changelog": "10.0.4",
+    "@slidev/cli": "0.51.0-beta.4",
+    "playwright-chromium": "1.57.0",
+    "release-it": "19.2.3",
+    "sass": "1.97.2"
   }
 }
