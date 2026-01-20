@@ -2,9 +2,9 @@
   <div class="flow-canvas" :style="containerStyle">
     <VueFlow
       :id="resolvedId"
-      v-model:nodes="internalNodes"
-      v-model:edges="internalEdges"
-      class="flow-canvas__viewport"
+      :nodes="internalNodes"
+      :edges="internalEdges"
+      :class="['flow-canvas__viewport', { 'flow-canvas__viewport--transparent': transparent }]"
       v-bind="mergedFlowProps"
       @init="handleInit"
     >
@@ -30,7 +30,7 @@ import { Background } from '@vue-flow/background'
 import type { BackgroundProps } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
 import type { ControlProps } from '@vue-flow/controls'
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 defineOptions({ name: 'FlowCanvas' })
 
@@ -72,6 +72,7 @@ const props = withDefaults(
     backgroundProps?: BackgroundProps
     controls?: boolean
     controlsProps?: ControlProps
+    transparent?: boolean
   }>(),
   {
     id: undefined,
@@ -90,12 +91,13 @@ const props = withDefaults(
     }),
     controls: false,
     controlsProps: () => ({}),
+    transparent: false,
   },
 )
 
 const autoId = `flow-${Math.random().toString(36).slice(2, 10)}`
 const resolvedId = props.id ?? props.flowProps?.id ?? autoId
-const flowStore = useVueFlow({ id: resolvedId })
+const flowStore = useVueFlow(resolvedId)
 const { $clicks } = useSlideContext()
 
 const internalNodes = ref<Node[]>(cloneValue(props.nodes))
@@ -120,16 +122,48 @@ const mergedFlowProps = computed<Partial<FlowProps>>(() => ({
 
 const containerStyle = computed(() => {
   const style: Record<string, string> = {}
+  const inverseScale = slideScale.value ? 1 / slideScale.value : 1
+
+  style.transform = `scale(${inverseScale})`
+  style.transformOrigin = 'top left'
 
   if (props.height != null) {
-    style.height = typeof props.height === 'number' ? `${props.height}px` : props.height
+    if (typeof props.height === 'number') {
+      style.height = `${props.height * slideScale.value}px`
+    } else {
+      style.height = `calc(${props.height} * ${slideScale.value})`
+    }
   }
 
   if (props.width != null) {
-    style.width = typeof props.width === 'number' ? `${props.width}px` : props.width
+    if (typeof props.width === 'number') {
+      style.width = `${props.width * slideScale.value}px`
+    } else {
+      style.width = `calc(${props.width} * ${slideScale.value})`
+    }
   }
 
   return style
+})
+
+const slideScale = ref(1)
+
+function updateSlideScale() {
+  if (typeof window === 'undefined') return
+  const rootStyle = window.getComputedStyle(document.documentElement)
+  const raw = rootStyle.getPropertyValue('--slidev-slide-scale').trim()
+  const parsed = Number.parseFloat(raw)
+  slideScale.value = Number.isFinite(parsed) && parsed > 0 ? parsed : 1
+}
+
+onMounted(() => {
+  updateSlideScale()
+  window.addEventListener('resize', updateSlideScale)
+})
+
+onBeforeUnmount(() => {
+  if (typeof window === 'undefined') return
+  window.removeEventListener('resize', updateSlideScale)
 })
 
 const activeStepIndex = computed(() => {
@@ -150,6 +184,13 @@ function handleInit() {
   isReady.value = true
   applySteps(activeStepIndex.value)
   runViewportActions()
+  scheduleNodeUpdate()
+}
+
+if (typeof document !== 'undefined' && document.fonts?.ready) {
+  document.fonts.ready.then(() => {
+    scheduleNodeUpdate()
+  })
 }
 
 watch(
@@ -288,6 +329,7 @@ function runViewportActions() {
   pendingFitView = null
 
   void nextTick(() => {
+    scheduleNodeUpdate()
     if (viewportAction) {
       void flowStore.setViewport(viewportAction.viewport, viewportAction.transition)
     }
@@ -296,6 +338,43 @@ function runViewportActions() {
       void flowStore.fitView(fitViewAction)
     }
   })
+}
+
+function scheduleNodeUpdate() {
+  flowStore.updateNodeInternals()
+  if (typeof requestAnimationFrame !== 'undefined') {
+    requestAnimationFrame(() => {
+      flowStore.updateNodeInternals()
+      updateEdgeAlignment()
+    })
+  }
+  setTimeout(() => {
+    flowStore.updateNodeInternals()
+    updateEdgeAlignment()
+  }, 60)
+}
+
+function updateEdgeAlignment() {
+  if (typeof document === 'undefined') return
+  const root = document.querySelector('.flow-canvas')
+  if (!root) return
+  const path = root.querySelector('.vue-flow__edges path')
+  if (!path) return
+  const sourceId = path.getAttribute('source')
+  if (!sourceId) return
+  const handle = root.querySelector(`.vue-flow__node[data-id="${sourceId}"] .vue-flow__handle-right`)
+  if (!handle) return
+  const handleRect = handle.getBoundingClientRect()
+  const handleCenterY = handleRect.y + handleRect.height / 2
+  const length = path.getTotalLength()
+  const start = path.getPointAtLength(0)
+  const ctm = path.getScreenCTM()
+  if (!ctm) return
+  const pathStartY = start.x * ctm.b + start.y * ctm.d + ctm.f
+  const offset = handleCenterY - pathStartY
+  if (Number.isFinite(offset)) {
+    edgeOffsetY.value = offset
+  }
 }
 
 function applyNodeUpdates(nodes: Node[], updates: NodeUpdate[]) {
@@ -343,7 +422,11 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 function cloneValue<T>(value: T): T {
   if (value == null) return value
   if (typeof structuredClone === 'function') {
-    return structuredClone(value)
+    try {
+      return structuredClone(value)
+    } catch {
+      // Fall back to JSON clone for reactive proxies or non-cloneable values.
+    }
   }
   return JSON.parse(JSON.stringify(value)) as T
 }
@@ -355,9 +438,16 @@ function cloneValue<T>(value: T): T {
 }
 
 .flow-canvas__viewport {
+  width: 100%;
+  height: 100%;
   border-radius: 18px;
   background: color-mix(in srgb, var(--slidev-theme-primary, #3e5166) 8%, white);
   border: 1px solid color-mix(in srgb, var(--slidev-theme-primary, #3e5166) 25%, transparent);
+}
+
+.flow-canvas__viewport--transparent {
+  background: transparent;
+  border-color: transparent;
 }
 
 .flow-canvas :deep(.vue-flow) {
@@ -367,6 +457,12 @@ function cloneValue<T>(value: T): T {
   --vf-handle: var(--slidev-theme-secondary, #34d399);
   --vf-connection-path: var(--slidev-theme-primary, #3e5166);
   --vf-box-shadow: 0 12px 24px -20px color-mix(in srgb, var(--slidev-theme-primary, #3e5166) 45%, transparent);
+}
+
+.flow-canvas :deep(.vue-flow__edges),
+.flow-canvas :deep(.vue-flow__edge-labels) {
+  transform: translateY(var(--flow-edge-y-offset, 0px)) scaleX(var(--flow-inverse-scale, 1));
+  transform-origin: top left;
 }
 
 .flow-canvas :deep(.vue-flow__node) {
@@ -379,6 +475,11 @@ function cloneValue<T>(value: T): T {
 html.dark .flow-canvas__viewport {
   background: color-mix(in srgb, var(--slidev-theme-primary, #3e5166) 30%, #0f172a);
   border-color: color-mix(in srgb, var(--slidev-theme-primary, #3e5166) 40%, transparent);
+}
+
+html.dark .flow-canvas__viewport--transparent {
+  background: transparent;
+  border-color: transparent;
 }
 
 html.dark .flow-canvas :deep(.vue-flow) {
