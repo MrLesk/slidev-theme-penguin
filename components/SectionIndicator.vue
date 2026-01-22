@@ -10,11 +10,11 @@ const { $slidev } = useSlideContext()
 
 // Get global config from frontmatter
 const config = computed(() => $slidev.configs.sectionIndicator || {})
-const globalEnabled = computed(() => config.value.enabled !== false) // enabled by default
+const globalEnabled = computed(() => config.value.enabled === true) // disabled by default
 const position = computed(() => config.value.position || 'bottom-right')
-const _showSectionName = computed(() => config.value.showSectionName !== false)
-const _showProgress = computed(() => config.value.showProgress !== false)
-const _showSlideNumbers = computed(() => config.value.showSlideNumbers !== false)
+const showSectionName = computed(() => config.value.showSectionName !== false)
+const showProgress = computed(() => config.value.showProgress !== false)
+const showSlideNumbers = computed(() => config.value.showSlideNumbers !== false)
 
 // Build maps for sections and their boundaries
 const sectionMap = ref<Map<number, string>>(new Map())
@@ -110,7 +110,7 @@ function getSectionStats(section: string) {
   }
 }
 
-const _sectionProgress = computed(() => {
+const sectionProgress = computed(() => {
   const section = currentSection.value
   if (!section) return 0
 
@@ -120,7 +120,7 @@ const _sectionProgress = computed(() => {
   return (position / total) * 100
 })
 
-const _sectionSlideNumbers = computed(() => {
+const sectionSlideNumbers = computed(() => {
   const section = currentSection.value
   if (!section) return ''
 
@@ -130,14 +130,14 @@ const _sectionSlideNumbers = computed(() => {
   return `${position} / ${total}`
 })
 
-const _isVisible = computed(() => {
+const isVisible = computed(() => {
   // Check global enabled flag
   if (!globalEnabled.value) return false
   // Check per-slide hideIndicator flag
   return !hiddenSlides.value.has(currentSlideNo.value)
 })
 
-const _positionClass = computed(() => {
+const positionClass = computed(() => {
   switch (position.value) {
     case 'bottom-left':
       return 'bottom-5 left-5'

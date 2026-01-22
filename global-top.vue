@@ -1,6 +1,11 @@
 <!-- global-top.vue -->
 
+<script setup>
+import SectionIndicator from './components/SectionIndicator.vue'
+</script>
+
 <template>
+  <SectionIndicator />
   <footer
     v-if="$slidev.themeConfigs.eventLogo || $slidev.themeConfigs.twitter"
     class="absolute bottom-0 p-4 mt-auto flex items-center w-full text-primary dark:text-white z-10"
