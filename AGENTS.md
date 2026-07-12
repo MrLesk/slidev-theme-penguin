@@ -131,8 +131,7 @@ A Slidev theme is an npm package that provides:
 **When Adding/Modifying Layouts:**
 1. Create/edit layout file in `layouts/`
 2. Add example usage to `example.md`
-3. Test with `bun dev`
-4. Update screenshots with `bun screenshot`
+3. Follow the testing workflow above
 
 **When Adding Components:**
 1. Create component in `components/` with PascalCase naming
@@ -141,13 +140,11 @@ A Slidev theme is an npm package that provides:
 
 **When Changing Styles:**
 1. Modify tokens in `styles/index.ts` or layout-specific SCSS
-2. Test in both light and dark modes
-3. Verify all layouts still look correct
+2. Follow the testing workflow above across the affected layouts
 
 **When Updating Example:**
 1. Edit `example.md` to showcase new features
 2. Run `bun export` to regenerate PDF
-3. Run `bun screenshot` to update previews
 
 ## Commit & Release Process
 
@@ -177,43 +174,3 @@ Follow Conventional Commits format:
 - **Screenshots matter** - visual regression is caught via screenshot comparison
 - **Slidev compatibility** - always verify against latest Slidev release
 - **Reference upstream** - check https://sli.dev/llms.txt for canonical Slidev patterns
-
-## Common Tasks
-
-**Adding a new layout:**
-```bash
-# 1. Create layout file
-touch layouts/my-new-layout.vue
-
-# 2. Implement layout with Vue 3 + TypeScript
-# 3. Add example to example.md:
----
-layout: my-new-layout
----
-
-# 4. Test
-bun dev
-
-# 5. Update visuals
-bun screenshot
-```
-
-**Debugging styling issues:**
-```bash
-# Start dev server
-bun dev
-
-# Open browser DevTools
-# Inspect element styles
-# Check CSS custom properties
-# Verify UnoCSS classes
-# Test dark mode toggle
-```
-
-**Before pushing:**
-```bash
-bun lint           # Check for errors (linting + formatting)
-bun lint:fix       # Auto-fix issues
-bun dev            # Manual test
-bun screenshot     # Update visuals
-```
